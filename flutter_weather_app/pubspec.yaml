@@ -1,0 +1,37 @@
+name: flutter_weather_app
+description: "A new Flutter project that fetches weather data using OpenWeatherMap API and manages state with BLoC."
+
+publish_to: 'none' 
+
+version: 1.0.0+1
+
+environment:
+  sdk: "^3.6.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  
+  cupertino_icons: ^1.0.8
+
+
+  flutter_bloc: ^8.0.0
+  
+ 
+  http: ^1.2.2
+
+
+  equatable: ^2.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+  flutter_lints: ^5.0.0
+
+
+flutter:
+  uses-material-design: true
+
