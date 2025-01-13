@@ -1,33 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_weather_app/bloc/weather_bloc.dart';
 import 'package:flutter_weather_app/repositories/weather_repository.dart';
+import 'package:flutter_weather_app/screens/home.dart';
 import 'package:flutter_weather_app/services/api_service.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
 
-  // Testowanie API
+void main() {
   final apiService = ApiService();
   final weatherRepository = WeatherRepository(apiService);
 
-  try {
-    final weather = await weatherRepository.getWeather("London");
-    print("City: ${weather.cityName}, Temp: ${weather.temperature}°C, Desc: ${weather.description}");
-  } catch (e) {
-    print("Error: $e");
-  }
-
-  runApp(MyApp());
+  runApp(MyApp(weatherRepository: weatherRepository));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final WeatherRepository weatherRepository;
+
+  const MyApp({super.key, required this.weatherRepository});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: Text("Weather App")),
-        body: Center(child: Text("Test")),
+      home: BlocProvider(
+        create: (_) => WeatherBloc(weatherRepository),
+        child: WeatherPage(),
       ),
     );
   }
