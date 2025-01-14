@@ -1,5 +1,5 @@
-import 'package:flutter_weather_app/models/weather_model.dart';
 
+import '../models/weather_model.dart';
 
 abstract class WeatherState {}
 

@@ -1,6 +1,5 @@
 import 'dart:convert';
-
-import 'package:flutter_weather_app/utils/config.dart';
+import '../utils/config.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {

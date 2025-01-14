@@ -1,5 +1,7 @@
-import 'package:flutter_weather_app/models/weather_model.dart';
-import 'package:flutter_weather_app/services/api_service.dart';
+
+
+import '../models/weather_model.dart';
+import '../services/api_service.dart';
 
 class WeatherRepository {
   final ApiService apiService;

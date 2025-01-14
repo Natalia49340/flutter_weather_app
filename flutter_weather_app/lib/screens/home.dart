@@ -13,62 +13,130 @@ class WeatherPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Weather App")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: cityController,
-              decoration: InputDecoration(
-                labelText: "Enter city name",
-                border: OutlineInputBorder(),
+      body: BlocBuilder<WeatherBloc, WeatherState>(
+        builder: (context, state) {
+          Color getBackgroundColor(double temp) {
+            if (temp < 10) {
+              return Colors.blue;
+            } else if (temp < 20) {
+              return Colors.lightBlue;
+            } else if (temp < 30) {
+              return Colors.orange;
+            } else {
+              return Colors.red;
+            }
+          }
+
+          return Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: state is WeatherLoaded
+                      ? LinearGradient(
+                          colors: [
+                            getBackgroundColor(state.weather.temperature),
+                            Colors.white,
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        )
+                      : LinearGradient(
+                          colors: [Colors.blueGrey, Colors.white],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                ),
               ),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                final cityName = cityController.text.trim();
-                if (cityName.isNotEmpty) {
-                  context.read<WeatherBloc>().add(FetchWeather(cityName));
-                }
-              },
-              child: Text("Get Weather"),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: BlocBuilder<WeatherBloc, WeatherState>(
-                builder: (context, state) {
-                  if (state is WeatherInitial) {
-                    return Center(child: Text("Enter a city name to get weather."));
-                  } else if (state is WeatherLoading) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (state is WeatherLoaded) {
-                    return Center(
-                      child: Column(
+              SafeArea(
+                child: Column(
+                  children: [
+                    SizedBox(height: 20),
+                    Text(
+                      "Weather App",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: TextField(
+                        controller: cityController,
+                        decoration: InputDecoration(
+                          labelText: "Enter city name",
+                          labelStyle: TextStyle(color: Colors.white),
+                          filled: true,
+                          fillColor: Colors.white.withAlpha(204),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        final cityName = cityController.text.trim();
+                        if (cityName.isNotEmpty) {
+                          context.read<WeatherBloc>().add(FetchWeather(cityName));
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                      ),
+                      child: Text("Get Weather"),
+                    ),
+                    SizedBox(height: 20),
+                    if (state is WeatherLoaded)
+                      Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             state.weather.cityName,
-                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
+                          Image.network(
+                            "https://openweathermap.org/img/wn/${state.weather.icon}@4x.png",
+                            fit: BoxFit.cover,
+),
+
                           Text(
                             "${state.weather.temperature}°C",
-                            style: TextStyle(fontSize: 48),
+                            style: TextStyle(
+                              fontSize: 80,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                          Text(state.weather.description),
+                          Text(
+                            state.weather.description,
+                            style: TextStyle(
+                              fontSize: 24,
+                              color: Colors.white,
+                            ),
+                          ),
                         ],
                       ),
-                    );
-                  } else if (state is WeatherError) {
-                    return Center(child: Text(state.message));
-                  }
-                  return SizedBox.shrink();
-                },
+                    if (state is WeatherLoading)
+                      Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    if (state is WeatherError)
+                      Center(
+                        child: Text(
+                          state.message,
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
