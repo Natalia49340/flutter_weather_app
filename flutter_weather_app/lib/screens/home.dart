@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_weather_app/bloc/weather_bloc.dart';
 import 'package:flutter_weather_app/bloc/weather_event.dart';
 import 'package:flutter_weather_app/bloc/weather_state.dart';
+import 'package:flutter_weather_app/models/weather_model.dart';
 
 class WeatherPage extends StatelessWidget {
   final TextEditingController cityController = TextEditingController();
@@ -12,12 +13,10 @@ class WeatherPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Dodajemy AppBar
       appBar: AppBar(
         title: Text("Weather App"),
         backgroundColor: Colors.blueAccent,
       ),
-      // Dodajemy Drawer (wysuwany panel z ulubionymi miastami)
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -34,28 +33,9 @@ class WeatherPage extends StatelessWidget {
                 ),
               ),
             ),
-            ListTile(
-              title: Text('Warsaw'),
-              onTap: () {
-                context.read<WeatherBloc>().add(FetchWeather('Warsaw'));
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: Text('London'),
-              onTap: () {
-                context.read<WeatherBloc>().add(FetchWeather('London'));
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: Text('New York'),
-              onTap: () {
-                context.read<WeatherBloc>().add(FetchWeather('New York'));
-                Navigator.pop(context);
-              },
-            ),
-            // Dodaj więcej miast według potrzeby
+            _buildCityListItem(context, 'Warsaw'),
+            _buildCityListItem(context, 'London'),
+            _buildCityListItem(context, 'New York'),
           ],
         ),
       ),
@@ -72,115 +52,203 @@ class WeatherPage extends StatelessWidget {
           }
         }
 
-        return Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: state is WeatherLoaded
-                    ? LinearGradient(
-                        colors: [
-                          getBackgroundColor(state.weather.temperature),
-                          Colors.white,
+        return Container(
+          decoration: BoxDecoration(
+            gradient: state is WeatherLoaded
+                ? LinearGradient(
+                    colors: [
+                      getBackgroundColor(state.weather.temperature),
+                      Colors.white,
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  )
+                : LinearGradient(
+                    colors: [Colors.blueGrey, Colors.white],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Text(
+                      state is WeatherLoaded ? state.weather.cityName : "Weather App",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: TextField(
+                        controller: cityController,
+                        decoration: InputDecoration(
+                          labelText: "Enter city name",
+                          labelStyle: TextStyle(color: Colors.white),
+                          filled: true,
+                          fillColor: Colors.white.withAlpha(204),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        final cityName = cityController.text.trim();
+                        if (cityName.isNotEmpty) {
+                          context.read<WeatherBloc>().add(FetchWeather(cityName));
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                      ),
+                      child: Text("Get Weather"),
+                    ),
+                    SizedBox(height: 20),
+                    if (state is WeatherLoaded)
+                      Column(
+                        children: [
+                          Text(
+                            state.weather.cityName,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Image.network(
+                            "https://openweathermap.org/img/wn/${state.weather.icon}@4x.png",
+                            fit: BoxFit.cover,
+                          ),
+                          Text(
+                            "${state.weather.temperature}°C",
+                            style: TextStyle(
+                              fontSize: 80,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            state.weather.description,
+                            style: TextStyle(
+                              fontSize: 24,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          _buildHourlyForecastWidget(state.weather),
+                          SizedBox(height: 10),
+                          _buildFiveDayForecastWidget(state.weather),
+                          SizedBox(height: 10),
+                          _buildUVWidget(state.weather),
+                          SizedBox(height: 10),
+                          _buildHumidityWidget(state.weather),
+                          SizedBox(height: 10),
+                          _buildPressureWidget(state.weather),
                         ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      )
-                    : LinearGradient(
-                        colors: [Colors.blueGrey, Colors.white],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
                       ),
+                    if (state is WeatherLoading)
+                      Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    if (state is WeatherError)
+                      Center(
+                        child: Text(
+                          state.message,
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-            SafeArea(
-              child: Column(
-                children: [
-                  SizedBox(height: 20),
-                  Text(
-                    "Weather App",
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: TextField(
-                      controller: cityController,
-                      decoration: InputDecoration(
-                        labelText: "Enter city name",
-                        labelStyle: TextStyle(color: Colors.white),
-                        filled: true,
-                        fillColor: Colors.white.withAlpha(204),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () {
-                      final cityName = cityController.text.trim();
-                      if (cityName.isNotEmpty) {
-                        context.read<WeatherBloc>().add(FetchWeather(cityName));
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                    ),
-                    child: Text("Get Weather"),
-                  ),
-                  SizedBox(height: 20),
-                  if (state is WeatherLoaded)
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          state.weather.cityName,
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Image.network(
-                          "https://openweathermap.org/img/wn/${state.weather.icon}@4x.png",
-                          fit: BoxFit.cover,
-                        ),
-                        Text(
-                          "${state.weather.temperature}°C",
-                          style: TextStyle(
-                            fontSize: 80,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          state.weather.description,
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  if (state is WeatherLoading)
-                    Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
-                  if (state is WeatherError)
-                    Center(
-                      child: Text(
-                        state.message,
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+          ),
         );
       }),
+    );
+  }
+
+  ListTile _buildCityListItem(BuildContext context, String city) {
+    return ListTile(
+      title: Text(city),
+      onTap: () {
+        context.read<WeatherBloc>().add(FetchWeather(city));
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Widget _buildHourlyForecastWidget(Weather weather) {
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      color: Colors.white.withAlpha(200),
+      child: Column(
+        children: [
+          Text('Hourly Forecast', style: TextStyle(fontSize: 20)),
+          Text('Hour: 1 - Temp: ${weather.temperature + 1}°C'),
+          Text('Hour: 2 - Temp: ${weather.temperature + 2}°C'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFiveDayForecastWidget(Weather weather) {
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      color: Colors.white.withAlpha(200),
+      child: Column(
+        children: [
+          Text('5-Day Forecast', style: TextStyle(fontSize: 20)),
+          Text('Day 1 - Temp: ${weather.temperature + 2}°C'),
+          Text('Day 2 - Temp: ${weather.temperature + 4}°C'),
+          Text('Day 3 - Temp: ${weather.temperature + 5}°C'),
+          Text('Day 4 - Temp: ${weather.temperature + 6}°C'),
+          Text('Day 5 - Temp: ${weather.temperature + 7}°C'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUVWidget(Weather weather) {
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      color: Colors.white.withAlpha(200),
+      child: Column(
+        children: [
+          Text('UV Index', style: TextStyle(fontSize: 20)),
+          Text('UV: 5.2'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHumidityWidget(Weather weather) {
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      color: Colors.white.withAlpha(200),
+      child: Column(
+        children: [
+          Text('Humidity', style: TextStyle(fontSize: 20)),
+          Text('Humidity: 70%'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPressureWidget(Weather weather) {
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      color: Colors.white.withAlpha(200),
+      child: Column(
+        children: [
+          Text('Pressure', style: TextStyle(fontSize: 20)),
+          Text('Pressure: 1012 hPa'),
+        ],
+      ),
     );
   }
 }
