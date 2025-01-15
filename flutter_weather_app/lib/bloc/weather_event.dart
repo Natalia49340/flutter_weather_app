@@ -5,3 +5,4 @@ class FetchWeather extends WeatherEvent {
 
   FetchWeather(this.cityName);
 }
+class ResetWeather extends WeatherEvent {}

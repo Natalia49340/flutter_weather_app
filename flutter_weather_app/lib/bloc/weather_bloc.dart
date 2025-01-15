@@ -1,11 +1,7 @@
-
-
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../repositories/weather_repository.dart';
-import 'weather_event.dart';
-import 'weather_state.dart';
+import 'package:flutter_weather_app/bloc/weather_event.dart';
+import 'package:flutter_weather_app/bloc/weather_state.dart';
+import 'package:flutter_weather_app/repositories/weather_repository.dart';
 
 class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
   final WeatherRepository weatherRepository;
@@ -19,6 +15,10 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
       } catch (e) {
         emit(WeatherError("Could not fetch weather data. Please try again."));
       }
+    });
+
+    on<ResetWeather>((event, emit) {
+      emit(WeatherInitial());  // Resetowanie stanu do początkowego
     });
   }
 }
