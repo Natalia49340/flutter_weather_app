@@ -18,7 +18,9 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
     });
 
     on<ResetWeather>((event, emit) {
-      emit(WeatherInitial());  // Resetowanie stanu do początkowego
+      emit(WeatherInitial()); 
     });
   }
 }
+
+

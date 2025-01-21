@@ -45,5 +45,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Potrzebujemy Twojej lokalizacji, aby wyświetlać dokładną pogodę.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Potrzebujemy Twojej lokalizacji, aby wyświetlać dokładną pogodę.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Potrzebujemy Twojej lokalizacji, aby wyświetlać dokładną pogodę.</string>
+
 </dict>
 </plist>

@@ -4,6 +4,9 @@ import 'package:flutter_weather_app/bloc/weather_bloc.dart';
 import 'package:flutter_weather_app/bloc/weather_event.dart';
 import 'package:flutter_weather_app/bloc/weather_state.dart';
 import 'package:flutter_weather_app/models/weather_model.dart';
+import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class WeatherPage extends StatefulWidget {
   const WeatherPage({super.key});
@@ -16,6 +19,57 @@ class WeatherPageState extends State<WeatherPage> {
   final TextEditingController cityController = TextEditingController();
   List<String> favoriteCities = [];
 
+
+
+final List<String> weatherChallenges = [
+    "Tańcz w deszczu",
+    "Zrób zdjęcie najpiękniejszej chmury, jaką dziś zobaczysz!",
+    "Wybierz się na spacer, niezależnie od pogody!",
+    "Spróbuj policzyć krople deszczu na szybie (przynajmniej przez minutę)!",
+    "Przeczytaj książkę z pogodą w tytule!",
+    "Poszukaj tęczy po deszczu"
+  ];
+
+    String? currentChallenge;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadState();
+    _generateNewChallenge();
+  }
+
+
+Future<void> _loadState() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    favoriteCities = prefs.getStringList('favoriteCities') ?? [];
+    final lastCity = prefs.getString('lastCity');
+    if (lastCity != null) {
+      context.read<WeatherBloc>().add(FetchWeather(lastCity));
+    }
+  });
+}
+
+Future<void> _saveState(String cityName) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('lastCity', cityName);
+}
+
+Future<void> _saveFavoriteCities() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setStringList('favoriteCities', favoriteCities);
+}
+
+  void _generateNewChallenge() {
+    final random = Random();
+    setState(() {
+      currentChallenge = weatherChallenges[random.nextInt(weatherChallenges.length)];
+    });
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,8 +78,18 @@ class WeatherPageState extends State<WeatherPage> {
           "Aplikacja Pogodowa",
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: _getAppBarColor(context),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.location_on,
+              color: Colors.white,
+              size: 30,
+            ),
+            onPressed: _onGeolocationPressed,
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -72,6 +136,26 @@ class WeatherPageState extends State<WeatherPage> {
                       const SizedBox(height: 40),
                       _buildCityInputSection(context),
                       const SizedBox(height: 30),
+                    _buildChallengeWidget(),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _generateNewChallenge,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text(
+                        "Nowe wyzwanie",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                      const SizedBox(height: 30),
                       if (state is WeatherLoading)
                         const CircularProgressIndicator(color: Colors.blueAccent),
                       if (state is WeatherError)
@@ -97,6 +181,9 @@ class WeatherPageState extends State<WeatherPage> {
                             _buildPressureWidget(state.weather),
                             _buildWindWidget(state.weather),
                             _buildSunriseSunsetWidget(state.weather),
+                            _buildActivitySuggestion(state.weather),
+                           
+                          
                           ],
                         ),
                     ],
@@ -108,6 +195,21 @@ class WeatherPageState extends State<WeatherPage> {
         },
       ),
     );
+  }
+
+
+
+
+
+  void _onGeolocationPressed() {}
+
+   Color _getAppBarColor(BuildContext context) {
+    final weatherState = context.watch<WeatherBloc>().state;
+    if (weatherState is WeatherLoaded) {
+      double temperature = weatherState.weather.temperature;
+      return _getBackgroundColor(temperature); 
+    }
+    return Colors.blueAccent;
   }
 
   Color _getBackgroundColor(double temp) {
@@ -162,14 +264,15 @@ class WeatherPageState extends State<WeatherPage> {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final cityName = cityController.text.trim();
               if (cityName.isNotEmpty) {
+                await _saveState(cityName);
                 context.read<WeatherBloc>().add(FetchWeather(cityName));
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent,
+              backgroundColor: _getButtonColor(context),
               padding: const EdgeInsets.symmetric(
                 horizontal: 50,
                 vertical: 15,
@@ -189,6 +292,61 @@ class WeatherPageState extends State<WeatherPage> {
         ],
       ),
     );
+  }
+
+
+
+
+ Widget _buildChallengeWidget() {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 20.0),
+      elevation: 5.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              'Dzisiejsze Wyzwanie:',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              currentChallenge ?? "Brak wyzwań.",
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.blueAccent,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
+  Color _getButtonColor(BuildContext context) {
+    final weatherState = context.watch<WeatherBloc>().state;
+    if (weatherState is WeatherLoaded) {
+      double temperature = weatherState.weather.temperature;
+      if (temperature < 10) {
+        return Colors.blue; 
+      } else if (temperature < 20) {
+        return Colors.lightBlue; 
+      } else if (temperature < 30) {
+        return Colors.orange; 
+      } else {
+        return Colors.red;
+      }
+    }
+    return Colors.blueAccent; 
   }
 
   Widget _buildWeatherCard(Weather weather) {
@@ -245,10 +403,11 @@ class WeatherPageState extends State<WeatherPage> {
           favoriteCities.contains(city) ? Icons.favorite : Icons.favorite_border,
           color: Colors.red,
         ),
-        onPressed: () {
+        onPressed: () async {
           setState(() {
-            favoriteCities.remove(city);  // Usuwa miasto z listy
+            favoriteCities.remove(city); 
           });
+          await _saveFavoriteCities();
         },
       ),
       onTap: () {
@@ -283,12 +442,13 @@ class WeatherPageState extends State<WeatherPage> {
               child: Text("Anuluj"),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 final newCity = cityController.text.trim();
                 if (newCity.isNotEmpty && !favoriteCities.contains(newCity)) {
                   setState(() {
                     favoriteCities.add(newCity);
                   });
+                  await _saveFavoriteCities();
                   Navigator.pop(context);
                 }
               },
@@ -343,6 +503,40 @@ class WeatherPageState extends State<WeatherPage> {
     );
   }
 
+Widget _buildActivitySuggestion(Weather weather) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 20.0),
+      elevation: 5.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              'Propozycje aktywności:',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              weather.suggestedActivity,
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.blueAccent,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
   Widget _buildUVWidget(Weather weather) {
     return _buildInfoCard('Indeks UV', 'UV: 5.2', Icons.sunny, Colors.orange);
   }
@@ -388,4 +582,3 @@ class WeatherPageState extends State<WeatherPage> {
       ),
     );
   }
-}
