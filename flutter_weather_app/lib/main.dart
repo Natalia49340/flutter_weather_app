@@ -5,8 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'bloc/weather_bloc.dart';
 import 'repositories/weather_repository.dart';
-import 'screens/home.dart';
 import 'services/api_service.dart';
+import 'screens/main_navigation_page.dart'; 
+
 
 
 void main() {
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: BlocProvider(
         create: (_) => WeatherBloc(weatherRepository),
-        child: WeatherPage(),
+        child: MainNavigationPage(weatherRepository: weatherRepository),
       ),
     );
   }

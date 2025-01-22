@@ -12,4 +12,6 @@ class WeatherRepository {
     final data = await apiService.fetchWeatherData(cityName);
     return Weather.fromJson(data);
   }
+
+  getWeatherByCoordinates(double latitude, double longitude) {}
 }

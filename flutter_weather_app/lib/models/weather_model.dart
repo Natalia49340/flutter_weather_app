@@ -20,7 +20,6 @@ class Weather {
     );
   }
 
-  // Suggested activity based on the temperature
   String get suggestedActivity {
     if (temperature > 30) {
       return 'Jest gorąco na zewnątrz! Co powiesz na pływanie?';
@@ -34,3 +33,4 @@ class Weather {
     }
   }
 }
+

@@ -1,12 +1,13 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_weather_app/bloc/weather_bloc.dart';
 import 'package:flutter_weather_app/bloc/weather_event.dart';
 import 'package:flutter_weather_app/bloc/weather_state.dart';
 import 'package:flutter_weather_app/models/weather_model.dart';
-import 'dart:math';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 class WeatherPage extends StatefulWidget {
   const WeatherPage({super.key});
@@ -18,9 +19,7 @@ class WeatherPage extends StatefulWidget {
 class WeatherPageState extends State<WeatherPage> {
   final TextEditingController cityController = TextEditingController();
   List<String> favoriteCities = [];
-
-
-
+  int userPoints = 0;
 final List<String> weatherChallenges = [
     "Tańcz w deszczu",
     "Zrób zdjęcie najpiękniejszej chmury, jaką dziś zobaczysz!",
@@ -30,14 +29,22 @@ final List<String> weatherChallenges = [
     "Poszukaj tęczy po deszczu"
   ];
 
-    String? currentChallenge;
+  String? currentChallenge;
 
   @override
   void initState() {
     super.initState();
-    _loadState();
+     _loadState();
     _generateNewChallenge();
   }
+
+
+Future<void> _updatePoints(int points) async {
+  setState(() {
+    userPoints += points;
+  });
+}
+
 
 
 Future<void> _loadState() async {
@@ -69,6 +76,20 @@ Future<void> _saveFavoriteCities() async {
   }
 
 
+  Future<void> _pickImage() async {
+  final picker = ImagePicker();
+  final image = await picker.pickImage(source: ImageSource.camera);
+
+  if (image != null) {
+    setState(() {
+      
+    });
+    await _updatePoints(10); 
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Zdjęcie przesłane! Zdobywasz 10 punktów!')),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +135,7 @@ Future<void> _saveFavoriteCities() async {
       ),
       body: BlocBuilder<WeatherBloc, WeatherState>(
         builder: (context, state) {
+         
           return Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -122,7 +144,7 @@ Future<void> _saveFavoriteCities() async {
                         _getBackgroundColor(state.weather.temperature),
                         Colors.white,
                       ]
-                    : [Colors.blueGrey, Colors.white],
+                    : [const Color.fromARGB(255, 86, 122, 140), Colors.white],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -136,25 +158,26 @@ Future<void> _saveFavoriteCities() async {
                       const SizedBox(height: 40),
                       _buildCityInputSection(context),
                       const SizedBox(height: 30),
-                    _buildChallengeWidget(),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _generateNewChallenge,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
+                      _buildChallengeWidget(),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _generateNewChallenge,
+                        
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                        child: const Text(
+                          "Nowe wyzwanie",
+                          style: TextStyle(fontSize: 18, color: Colors.black54),
                         ),
                       ),
-                      child: const Text(
-                        "Nowe wyzwanie",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
                       const SizedBox(height: 30),
                       if (state is WeatherLoading)
                         const CircularProgressIndicator(color: Colors.blueAccent),
@@ -182,8 +205,6 @@ Future<void> _saveFavoriteCities() async {
                             _buildWindWidget(state.weather),
                             _buildSunriseSunsetWidget(state.weather),
                             _buildActivitySuggestion(state.weather),
-                           
-                          
                           ],
                         ),
                     ],
@@ -197,17 +218,13 @@ Future<void> _saveFavoriteCities() async {
     );
   }
 
-
-
-
-
   void _onGeolocationPressed() {}
 
-   Color _getAppBarColor(BuildContext context) {
+  Color _getAppBarColor(BuildContext context) {
     final weatherState = context.watch<WeatherBloc>().state;
     if (weatherState is WeatherLoaded) {
       double temperature = weatherState.weather.temperature;
-      return _getBackgroundColor(temperature); 
+      return _getBackgroundColor(temperature);
     }
     return Colors.blueAccent;
   }
@@ -286,6 +303,7 @@ Future<void> _saveFavoriteCities() async {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: Colors.black54,
               ),
             ),
           ),
@@ -294,10 +312,7 @@ Future<void> _saveFavoriteCities() async {
     );
   }
 
-
-
-
- Widget _buildChallengeWidget() {
+  Widget _buildChallengeWidget() {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 20.0),
       elevation: 5.0,
@@ -324,29 +339,42 @@ Future<void> _saveFavoriteCities() async {
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _pickImage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 86, 122, 140),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: const Text(
+                "Dodaj zdjęcie",
+                style: TextStyle(fontSize: 18, color: Colors.black54),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-
-
   Color _getButtonColor(BuildContext context) {
     final weatherState = context.watch<WeatherBloc>().state;
     if (weatherState is WeatherLoaded) {
       double temperature = weatherState.weather.temperature;
       if (temperature < 10) {
-        return Colors.blue; 
+        return Colors.blue;
       } else if (temperature < 20) {
-        return Colors.lightBlue; 
+        return Colors.lightBlue;
       } else if (temperature < 30) {
-        return Colors.orange; 
+        return Colors.orange;
       } else {
         return Colors.red;
       }
     }
-    return Colors.blueAccent; 
+    return Colors.blueAccent;
   }
 
   Widget _buildWeatherCard(Weather weather) {
@@ -405,7 +433,7 @@ Future<void> _saveFavoriteCities() async {
         ),
         onPressed: () async {
           setState(() {
-            favoriteCities.remove(city); 
+            favoriteCities.remove(city);
           });
           await _saveFavoriteCities();
         },
@@ -503,7 +531,7 @@ Future<void> _saveFavoriteCities() async {
     );
   }
 
-Widget _buildActivitySuggestion(Weather weather) {
+  Widget _buildActivitySuggestion(Weather weather) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 20.0),
       elevation: 5.0,
@@ -534,8 +562,6 @@ Widget _buildActivitySuggestion(Weather weather) {
       ),
     );
   }
-}
-
 
   Widget _buildUVWidget(Weather weather) {
     return _buildInfoCard('Indeks UV', 'UV: 5.2', Icons.sunny, Colors.orange);
@@ -557,6 +583,9 @@ Widget _buildActivitySuggestion(Weather weather) {
     return _buildInfoCard(
         'Wschód i zachód słońca', 'Wschód: 6:30 AM, Zachód: 7:00 PM', Icons.wb_sunny, Colors.orange);
   }
+
+
+
 
   Widget _buildInfoCard(String title, String info, IconData icon, Color iconColor) {
     return Card(
@@ -582,3 +611,4 @@ Widget _buildActivitySuggestion(Weather weather) {
       ),
     );
   }
+}

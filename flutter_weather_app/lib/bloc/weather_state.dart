@@ -1,4 +1,3 @@
-
 import '../models/weather_model.dart';
 
 abstract class WeatherState {}
@@ -36,6 +35,5 @@ class FavoriteCitiesError extends FavoriteCitiesState {
   final String message;
   FavoriteCitiesError(this.message);
 }
-
 
 
